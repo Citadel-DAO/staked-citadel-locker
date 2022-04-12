@@ -21,6 +21,7 @@ Adapted from CvxLockerV2.sol (https://github.com/convex-eth/platform/blob/4a51cf
 
 Changes:
 - Upgradeability
+- Removed staking
 */
 contract StakedCitadelLocker is Initializable, ReentrancyGuardUpgradeable, OwnableUpgradeable {
 
@@ -160,7 +161,7 @@ contract StakedCitadelLocker is Initializable, ReentrancyGuardUpgradeable, Ownab
         bool _useBoost
     ) public onlyOwner {
         require(rewardData[_rewardsToken].lastUpdateTime == 0);
-        require(_rewardsToken != address(stakingToken));
+        // require(_rewardsToken != address(stakingToken));
         rewardTokens.push(_rewardsToken);
         rewardData[_rewardsToken].lastUpdateTime = uint40(block.timestamp);
         rewardData[_rewardsToken].periodFinish = uint40(block.timestamp);
@@ -729,6 +730,7 @@ contract StakedCitadelLocker is Initializable, ReentrancyGuardUpgradeable, Ownab
     }
 
     //pull required amount of cvx from staking for an upcoming transfer
+    // dev: no-op
     function allocateCVXForTransfer(uint256 _amount) internal{
         uint256 balance = stakingToken.balanceOf(address(this));
     }
