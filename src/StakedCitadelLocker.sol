@@ -13,6 +13,8 @@ import "openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "openzeppelin-contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "openzeppelin-contracts-upgradeable/proxy/Initializable.sol";
 
+import "./lib/GlobalAccessControlManaged.sol";
+
 /*
 Citadel locking contract
 
@@ -25,7 +27,8 @@ Changes:
 contract StakedCitadelLocker is
     Initializable,
     ReentrancyGuardUpgradeable,
-    OwnableUpgradeable
+    OwnableUpgradeable,
+    GlobalAccessControlManaged
 {
     using BoringMath for uint256;
     using BoringMath224 for uint224;
@@ -123,6 +126,7 @@ contract StakedCitadelLocker is
 
     function initialize(
         address _stakingToken,
+        address _gac,
         string calldata name,
         string calldata symbol
     ) public initializer {
@@ -140,6 +144,7 @@ contract StakedCitadelLocker is
 
         __Ownable_init();
         __ReentrancyGuard_init();
+        __GlobalAccessControlManaged_init(_gac);
     }
 
     function decimals() public view returns (uint8) {
@@ -165,7 +170,7 @@ contract StakedCitadelLocker is
         address _rewardsToken,
         address _distributor,
         bool _useBoost
-    ) public onlyOwner {
+    ) public onlyOwner gacPausable {
         require(rewardData[_rewardsToken].lastUpdateTime == 0);
         // require(_rewardsToken != address(stakingToken));
         rewardTokens.push(_rewardsToken);
@@ -180,13 +185,13 @@ contract StakedCitadelLocker is
         address _rewardsToken,
         address _distributor,
         bool _approved
-    ) external onlyOwner {
+    ) external onlyOwner gacPausable {
         require(rewardData[_rewardsToken].lastUpdateTime > 0);
         rewardDistributors[_rewardsToken][_distributor] = _approved;
     }
 
     //Set the staking contract for the underlying cvx
-    function setStakingContract(address _staking) external onlyOwner {
+    function setStakingContract(address _staking) external onlyOwner gacPausable {
         require(stakingProxy == address(0), "!assign");
 
         stakingProxy = _staking;
@@ -196,6 +201,7 @@ contract StakedCitadelLocker is
     function setStakeLimits(uint256 _minimum, uint256 _maximum)
         external
         onlyOwner
+        gacPausable
     {
         require(_minimum <= denominator, "min range");
         require(_maximum <= denominator, "max range");
@@ -210,7 +216,7 @@ contract StakedCitadelLocker is
         uint256 _max,
         uint256 _rate,
         address _receivingAddress
-    ) external onlyOwner {
+    ) external onlyOwner gacPausable {
         require(_max < 1500, "over max payment"); //max 15%
         require(_rate < 30000, "over max rate"); //max 3x
         require(_receivingAddress != address(0), "invalid address"); //must point somewhere valid
@@ -223,6 +229,7 @@ contract StakedCitadelLocker is
     function setKickIncentive(uint256 _rate, uint256 _delay)
         external
         onlyOwner
+        gacPausable
     {
         require(_rate <= 500, "over max rate"); //max 5% per epoch
         require(_delay >= 2, "min delay"); //minimum 2 epochs of grace
@@ -626,7 +633,7 @@ contract StakedCitadelLocker is
         address _account,
         uint256 _amount,
         uint256 _spendRatio
-    ) external nonReentrant updateReward(_account) {
+    ) external nonReentrant gacPausable updateReward(_account) {
         //pull tokens
         stakingToken.safeTransferFrom(msg.sender, address(this), _amount);
 
@@ -876,16 +883,16 @@ contract StakedCitadelLocker is
     }
 
     // withdraw expired locks to a different address
-    function withdrawExpiredLocksTo(address _withdrawTo) external nonReentrant {
+    function withdrawExpiredLocksTo(address _withdrawTo) external nonReentrant gacPausable {
         _processExpiredLocks(msg.sender, false, 0, _withdrawTo, msg.sender, 0);
     }
 
     // Withdraw/relock all currently locked tokens where the unlock time has passed
-    function processExpiredLocks(bool _relock) external nonReentrant {
+    function processExpiredLocks(bool _relock) external nonReentrant gacPausable {
         _processExpiredLocks(msg.sender, _relock, 0, msg.sender, msg.sender, 0);
     }
 
-    function kickExpiredLocks(address _account) external nonReentrant {
+    function kickExpiredLocks(address _account) external nonReentrant gacPausable {
         //allow kick after grace period of 'kickRewardEpochDelay'
         _processExpiredLocks(
             _account,
@@ -948,6 +955,7 @@ contract StakedCitadelLocker is
     function getReward(address _account, bool _stake)
         public
         nonReentrant
+        gacPausable
         updateReward(_account)
     {
         for (uint256 i; i < rewardTokens.length; i++) {
@@ -990,6 +998,7 @@ contract StakedCitadelLocker is
 
     function notifyRewardAmount(address _rewardsToken, uint256 _reward)
         external
+        gacPausable
         updateReward(address(0))
     {
         require(rewardDistributors[_rewardsToken][msg.sender]);
@@ -1012,6 +1021,7 @@ contract StakedCitadelLocker is
     function recoverERC20(address _tokenAddress, uint256 _tokenAmount)
         external
         onlyOwner
+        gacPausable
     {
         require(
             _tokenAddress != address(stakingToken),
