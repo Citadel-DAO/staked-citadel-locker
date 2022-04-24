@@ -356,6 +356,21 @@ contract StakedCitadelLocker is
         }
         return userRewards;
     }
+    function claimableRewardForToken(address _account, address_ rewardToken)
+        external
+        view
+        returns (EarnedData userReward)
+    {
+        Balances storage userBalance = balances[_account];
+        return EarnedData(
+           _rewardToken,
+           _earned(
+               _user,
+               _rewardsToken,
+               rewardData[token].useBoost ? userBalance.boosted : userBalance.locked
+            )
+        );
+    }
 
     // Total BOOSTED balance of an account, including unlocked but not withdrawn tokens
     function rewardWeightOf(address _user)
