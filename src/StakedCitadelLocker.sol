@@ -356,7 +356,7 @@ contract StakedCitadelLocker is
         }
         return userRewards;
     }
-    function claimableRewardForToken(address _account, address_ rewardToken)
+    function claimableRewardForToken(address _account, address _rewardToken)
         external
         view
         returns (EarnedData memory userReward)
@@ -365,9 +365,9 @@ contract StakedCitadelLocker is
         return EarnedData(
            _rewardToken,
            _earned(
-               _user,
-               _rewardsToken,
-               rewardData[token].useBoost ? userBalance.boosted : userBalance.locked
+               _account,
+               _rewardToken,
+               rewardData[_rewardToken].useBoost ? userBalance.boosted : userBalance.locked
             )
         );
     }
