@@ -93,6 +93,7 @@ contract StakedCitadelLocker is
     //mappings for balance data
     mapping(address => Balances) public balances;
     mapping(address => LockedBalance[]) public userLocks;
+    mapping(address => mapping(address => uint256)) public cumulativeClaimed;
 
     // ========== Not used ==========
     //boost
@@ -251,6 +252,14 @@ contract StakedCitadelLocker is
             tokens[i] = rewardTokens[i];
         }
         return tokens;
+    }
+
+    function getCumulativeClaimedRewards(address _account, address _rewardsToken)
+        external
+        view
+        returns (uint256) 
+    {
+        return cumulativeClaimed[_account][_rewardsToken];
     }
 
     function _rewardPerToken(address _rewardsToken)
@@ -964,6 +973,7 @@ contract StakedCitadelLocker is
             if (reward > 0) {
                 rewards[_account][_rewardsToken] = 0;
                 IERC20Upgradeable(_rewardsToken).safeTransfer(_account, reward);
+                cumulativeClaimed[_account][_rewardsToken] += reward;
                 emit RewardPaid(_account, _rewardsToken, reward);
             }
         }
@@ -996,7 +1006,7 @@ contract StakedCitadelLocker is
         rdata.periodFinish = block.timestamp.add(rewardsDuration).to40();
     }
 
-    function notifyRewardAmount(address _rewardsToken, uint256 _reward)
+    function notifyRewardAmount(address _rewardsToken, uint256 _reward, bytes32 _dataTypeHash)
         external
         gacPausable
         updateReward(address(0))
@@ -1014,7 +1024,7 @@ contract StakedCitadelLocker is
             _reward
         );
 
-        emit RewardAdded(_rewardsToken, _reward);
+        emit RewardAdded(msg.sender, _rewardsToken, _reward, _dataTypeHash);
     }
 
     // Added to support recovering LP Rewards from other systems such as BAL to be distributed to holders
@@ -1067,7 +1077,7 @@ contract StakedCitadelLocker is
     }
 
     /* ========== EVENTS ========== */
-    event RewardAdded(address indexed _token, uint256 _reward);
+    event RewardAdded(address account, address indexed _token, uint256 _reward, bytes32 _dataTypeHash);
     event Staked(
         address indexed _user,
         uint256 indexed _epoch,

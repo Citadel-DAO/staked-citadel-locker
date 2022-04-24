@@ -82,7 +82,7 @@ contract GlobalAccessControlTest is BaseFixture {
         xCitadelLocker.getReward(address(1), true);
 
         vm.expectRevert("local-paused");
-        xCitadelLocker.notifyRewardAmount(address(1), 10e18);
+        xCitadelLocker.notifyRewardAmount(address(1), 10e18, keccak256("XCITADEL"));
 
         vm.stopPrank();
 
@@ -139,7 +139,7 @@ contract GlobalAccessControlTest is BaseFixture {
         xCitadelLocker.getReward(address(1), true);
 
         vm.expectRevert("global-paused");
-        xCitadelLocker.notifyRewardAmount(address(1), 10e18);
+        xCitadelLocker.notifyRewardAmount(address(1), 10e18, keccak256("XCITADEL"));
 
         vm.stopPrank();
 
