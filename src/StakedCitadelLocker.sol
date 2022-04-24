@@ -359,7 +359,7 @@ contract StakedCitadelLocker is
     function claimableRewardForToken(address _account, address_ rewardToken)
         external
         view
-        returns (EarnedData userReward)
+        returns (EarnedData memory userReward)
     {
         Balances storage userBalance = balances[_account];
         return EarnedData(
