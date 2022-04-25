@@ -192,7 +192,11 @@ contract StakedCitadelLocker is
     }
 
     //Set the staking contract for the underlying cvx
-    function setStakingContract(address _staking) external onlyOwner gacPausable {
+    function setStakingContract(address _staking)
+        external
+        onlyOwner
+        gacPausable
+    {
         require(stakingProxy == address(0), "!assign");
 
         stakingProxy = _staking;
@@ -254,11 +258,10 @@ contract StakedCitadelLocker is
         return tokens;
     }
 
-    function getCumulativeClaimedRewards(address _account, address _rewardsToken)
-        external
-        view
-        returns (uint256) 
-    {
+    function getCumulativeClaimedRewards(
+        address _account,
+        address _rewardsToken
+    ) external view returns (uint256) {
         return cumulativeClaimed[_account][_rewardsToken];
     }
 
@@ -356,20 +359,24 @@ contract StakedCitadelLocker is
         }
         return userRewards;
     }
+
     function claimableRewardForToken(address _account, address _rewardToken)
         external
         view
         returns (EarnedData memory userReward)
     {
         Balances storage userBalance = balances[_account];
-        return EarnedData(
-           _rewardToken,
-           _earned(
-               _account,
-               _rewardToken,
-               rewardData[_rewardToken].useBoost ? userBalance.boosted : userBalance.locked
-            )
-        );
+        return
+            EarnedData(
+                _rewardToken,
+                _earned(
+                    _account,
+                    _rewardToken,
+                    rewardData[_rewardToken].useBoost
+                        ? userBalance.boosted
+                        : userBalance.locked
+                )
+            );
     }
 
     // Total BOOSTED balance of an account, including unlocked but not withdrawn tokens
@@ -907,16 +914,28 @@ contract StakedCitadelLocker is
     }
 
     // withdraw expired locks to a different address
-    function withdrawExpiredLocksTo(address _withdrawTo) external nonReentrant gacPausable {
+    function withdrawExpiredLocksTo(address _withdrawTo)
+        external
+        nonReentrant
+        gacPausable
+    {
         _processExpiredLocks(msg.sender, false, 0, _withdrawTo, msg.sender, 0);
     }
 
     // Withdraw/relock all currently locked tokens where the unlock time has passed
-    function processExpiredLocks(bool _relock) external nonReentrant gacPausable {
+    function processExpiredLocks(bool _relock)
+        external
+        nonReentrant
+        gacPausable
+    {
         _processExpiredLocks(msg.sender, _relock, 0, msg.sender, msg.sender, 0);
     }
 
-    function kickExpiredLocks(address _account) external nonReentrant gacPausable {
+    function kickExpiredLocks(address _account)
+        external
+        nonReentrant
+        gacPausable
+    {
         //allow kick after grace period of 'kickRewardEpochDelay'
         _processExpiredLocks(
             _account,
@@ -1021,11 +1040,19 @@ contract StakedCitadelLocker is
         rdata.periodFinish = block.timestamp.add(rewardsDuration).to40();
     }
 
-    function notifyRewardAmount(address _rewardsToken, uint256 _reward, bytes32 _dataTypeHash)
-        external
-        gacPausable
-        updateReward(address(0))
-    {
+    function notifyRewardAmount(
+        address _rewardsToken,
+        uint256 _reward,
+        bytes32 _dataTypeHash
+    ) external gacPausable updateReward(address(0)) {
+        notifyRewardAmount(_rewardsToken, _reward, bytes32(0));
+    }
+
+    function notifyRewardAmount(
+        address _rewardsToken,
+        uint256 _reward,
+        bytes32 _dataTypeHash
+    ) public gacPausable updateReward(address(0)) {
         require(rewardDistributors[_rewardsToken][msg.sender]);
         require(_reward > 0, "No reward");
 
@@ -1092,7 +1119,12 @@ contract StakedCitadelLocker is
     }
 
     /* ========== EVENTS ========== */
-    event RewardAdded(address account, address indexed _token, uint256 _reward, bytes32 _dataTypeHash);
+    event RewardAdded(
+        address account,
+        address indexed _token,
+        uint256 _reward,
+        bytes32 _dataTypeHash
+    );
     event Staked(
         address indexed _user,
         uint256 indexed _epoch,
