@@ -1042,8 +1042,7 @@ contract StakedCitadelLocker is
 
     function notifyRewardAmount(
         address _rewardsToken,
-        uint256 _reward,
-        bytes32 _dataTypeHash
+        uint256 _reward
     ) external gacPausable updateReward(address(0)) {
         notifyRewardAmount(_rewardsToken, _reward, bytes32(0));
     }
