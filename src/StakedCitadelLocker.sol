@@ -1072,7 +1072,7 @@ contract StakedCitadelLocker is
         );
 
         cumulativeDistributed[_rewardsToken] += _reward;
-        emit RewardAdded(msg.sender, _rewardsToken, _reward, _dataTypeHash);
+        emit RewardAdded(msg.sender, _rewardsToken, _reward, _dataTypeHash, block.timestamp);
     }
 
     // Added to support recovering LP Rewards from other systems such as BAL to be distributed to holders
@@ -1129,7 +1129,8 @@ contract StakedCitadelLocker is
         address account,
         address indexed _token,
         uint256 _reward,
-        bytes32 _dataTypeHash
+        bytes32 _dataTypeHash,
+        uint256 _timestamp
     );
     event Staked(
         address indexed _user,
