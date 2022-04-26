@@ -93,7 +93,6 @@ contract StakedCitadelLocker is
     //mappings for balance data
     mapping(address => Balances) public balances;
     mapping(address => LockedBalance[]) public userLocks;
-    mapping(address => mapping(address => uint256)) public cumulativeClaimed;
 
     // ========== Not used ==========
     //boost
@@ -122,6 +121,13 @@ contract StakedCitadelLocker is
     string private _name;
     string private _symbol;
     uint8 private _decimals;
+
+    // Cumulative rewards claimed by a user for a given reward token. Mapped by user -> token -> amount
+    mapping(address => mapping(address => uint256)) public cumulativeClaimed;
+
+    // Cumuluative amount of a given reward token distributed by all rewardDistributors
+    mapping(address => uint256) public cumulativeDistributed;
+
 
     /* ========== CONSTRUCTOR ========== */
 
@@ -1065,6 +1071,7 @@ contract StakedCitadelLocker is
             _reward
         );
 
+        cumulativeDistributed[_rewardsToken] += _reward;
         emit RewardAdded(msg.sender, _rewardsToken, _reward, _dataTypeHash);
     }
 
