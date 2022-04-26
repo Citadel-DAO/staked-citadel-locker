@@ -72,10 +72,10 @@ contract StakedCitadelLocker is
     mapping(address => Reward) public rewardData;
 
     // Duration that rewards are streamed over
-    uint256 public constant rewardsDuration = 86400; // 1 day
+    uint256 public constant rewardsDuration = 86400 * 21; // 21 days
 
     // Duration of lock/earned penalty period
-    uint256 public constant lockDuration = rewardsDuration * 7 * 21; // 21 weeks
+    uint256 public constant lockDuration = 86400 * 7 * 21; // 21 weeks
 
     // reward token -> distributor -> is approved to add rewards
     mapping(address => mapping(address => bool)) public rewardDistributors;
