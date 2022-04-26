@@ -9,7 +9,6 @@ import "./interfaces/BoringMath.sol";
 import "openzeppelin-contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "openzeppelin-contracts-upgradeable/token/ERC20/SafeERC20Upgradeable.sol";
 import "openzeppelin-contracts-upgradeable/math/MathUpgradeable.sol";
-import "openzeppelin-contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "openzeppelin-contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 import "openzeppelin-contracts-upgradeable/proxy/Initializable.sol";
 
@@ -27,7 +26,6 @@ Changes:
 contract StakedCitadelLocker is
     Initializable,
     ReentrancyGuardUpgradeable,
-    OwnableUpgradeable,
     GlobalAccessControlManaged
 {
     using BoringMath for uint256;
@@ -63,6 +61,15 @@ contract StakedCitadelLocker is
         uint224 supply; //epoch boosted supply
         uint32 date; //epoch start date
     }
+
+    bytes32 public constant CONTRACT_GOVERNANCE_ROLE =
+        keccak256("CONTRACT_GOVERNANCE_ROLE");
+
+    bytes32 public constant TREASURY_GOVERNANCE_ROLE =
+        keccak256("TREASURY_GOVERNANCE_ROLE");
+
+    bytes32 public constant TECH_OPERATIONS_ROLE =
+        keccak256("TECH_OPERATIONS_ROLE");
 
     //token constants
     IERC20Upgradeable public stakingToken; // xCTDL token
@@ -128,7 +135,6 @@ contract StakedCitadelLocker is
     // Cumuluative amount of a given reward token distributed by all rewardDistributors
     mapping(address => uint256) public cumulativeDistributed;
 
-
     /* ========== CONSTRUCTOR ========== */
 
     function initialize(
@@ -149,7 +155,6 @@ contract StakedCitadelLocker is
         );
         epochs.push(Epoch({supply: 0, date: uint32(currentEpoch)}));
 
-        __Ownable_init();
         __ReentrancyGuard_init();
         __GlobalAccessControlManaged_init(_gac);
     }
@@ -177,7 +182,7 @@ contract StakedCitadelLocker is
         address _rewardsToken,
         address _distributor,
         bool _useBoost
-    ) public onlyOwner gacPausable {
+    ) public onlyRole(CONTRACT_GOVERNANCE_ROLE) gacPausable {
         require(rewardData[_rewardsToken].lastUpdateTime == 0);
         // require(_rewardsToken != address(stakingToken));
         rewardTokens.push(_rewardsToken);
@@ -192,7 +197,7 @@ contract StakedCitadelLocker is
         address _rewardsToken,
         address _distributor,
         bool _approved
-    ) external onlyOwner gacPausable {
+    ) external onlyRole(CONTRACT_GOVERNANCE_ROLE) gacPausable {
         require(rewardData[_rewardsToken].lastUpdateTime > 0);
         rewardDistributors[_rewardsToken][_distributor] = _approved;
     }
@@ -200,7 +205,7 @@ contract StakedCitadelLocker is
     //Set the staking contract for the underlying cvx
     function setStakingContract(address _staking)
         external
-        onlyOwner
+        onlyRole(CONTRACT_GOVERNANCE_ROLE)
         gacPausable
     {
         require(stakingProxy == address(0), "!assign");
@@ -211,7 +216,7 @@ contract StakedCitadelLocker is
     //set staking limits. will stake the mean of the two once either ratio is crossed
     function setStakeLimits(uint256 _minimum, uint256 _maximum)
         external
-        onlyOwner
+        onlyRole(CONTRACT_GOVERNANCE_ROLE)
         gacPausable
     {
         require(_minimum <= denominator, "min range");
@@ -227,7 +232,7 @@ contract StakedCitadelLocker is
         uint256 _max,
         uint256 _rate,
         address _receivingAddress
-    ) external onlyOwner gacPausable {
+    ) external onlyRole(CONTRACT_GOVERNANCE_ROLE) gacPausable {
         require(_max < 1500, "over max payment"); //max 15%
         require(_rate < 30000, "over max rate"); //max 3x
         require(_receivingAddress != address(0), "invalid address"); //must point somewhere valid
@@ -239,7 +244,7 @@ contract StakedCitadelLocker is
     //set kick incentive
     function setKickIncentive(uint256 _rate, uint256 _delay)
         external
-        onlyOwner
+        onlyRole(CONTRACT_GOVERNANCE_ROLE)
         gacPausable
     {
         require(_rate <= 500, "over max rate"); //max 5% per epoch
@@ -249,7 +254,7 @@ contract StakedCitadelLocker is
     }
 
     //shutdown the contract. unstake all tokens. release all locks
-    function shutdown() external onlyOwner {
+    function shutdown() external onlyRole(CONTRACT_GOVERNANCE_ROLE) {
         isShutdown = true;
     }
 
@@ -1046,10 +1051,11 @@ contract StakedCitadelLocker is
         rdata.periodFinish = block.timestamp.add(rewardsDuration).to40();
     }
 
-    function notifyRewardAmount(
-        address _rewardsToken,
-        uint256 _reward
-    ) external gacPausable updateReward(address(0)) {
+    function notifyRewardAmount(address _rewardsToken, uint256 _reward)
+        external
+        gacPausable
+        updateReward(address(0))
+    {
         notifyRewardAmount(_rewardsToken, _reward, bytes32(0));
     }
 
@@ -1072,15 +1078,25 @@ contract StakedCitadelLocker is
         );
 
         cumulativeDistributed[_rewardsToken] += _reward;
-        emit RewardAdded(msg.sender, _rewardsToken, _reward, _dataTypeHash, block.timestamp);
+        emit RewardAdded(
+            msg.sender,
+            _rewardsToken,
+            _reward,
+            _dataTypeHash,
+            block.timestamp
+        );
     }
 
     // Added to support recovering LP Rewards from other systems such as BAL to be distributed to holders
     function recoverERC20(address _tokenAddress, uint256 _tokenAmount)
         external
-        onlyOwner
+        onlyRole(CONTRACT_GOVERNANCE_ROLE)
         gacPausable
-    {
+    {   
+
+        // Will revert if no treasury governance role allocated
+        address treasury = gac.getRoleMember(TREASURY_GOVERNANCE_ROLE, 0);
+
         require(
             _tokenAddress != address(stakingToken),
             "Cannot withdraw staking token"
@@ -1089,7 +1105,7 @@ contract StakedCitadelLocker is
             rewardData[_tokenAddress].lastUpdateTime == 0,
             "Cannot withdraw reward token"
         );
-        IERC20Upgradeable(_tokenAddress).safeTransfer(owner(), _tokenAmount);
+        IERC20Upgradeable(_tokenAddress).safeTransfer(treasury, _tokenAmount);
         emit Recovered(_tokenAddress, _tokenAmount);
     }
 
