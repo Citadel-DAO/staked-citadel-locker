@@ -36,34 +36,8 @@ contract GlobalAccessControlManaged is PausableUpgradeable {
     /// ===== Modifiers =====
     /// =====================
 
-    // @dev only holders of the given role on the GAC can call
-    modifier onlyRole(bytes32 role) {
+    function _onlyRole(bytes32 role) internal {
         require(gac.hasRole(role, msg.sender), "GAC: invalid-caller-role");
-        _;
-    }
-
-    // @dev only holders of any of the given set of roles on the GAC can call
-    modifier onlyRoles(bytes32[] memory roles) {
-        bool validRoleFound = false;
-        for (uint256 i = 0; i < roles.length; i++) {
-            bytes32 role = roles[i];
-            if (gac.hasRole(role, msg.sender)) {
-                validRoleFound = true;
-                break;
-            }
-        }
-        require(validRoleFound, "GAC: invalid-caller-role");
-        _;
-    }
-
-    // @dev only holders of the given role on the GAC can call, or a specified address
-    // @dev used to faciliate extra contract-specific permissioned accounts
-    modifier onlyRoleOrAddress(bytes32 role, address account) {
-        require(
-            gac.hasRole(role, msg.sender) || msg.sender == account,
-            "GAC: invalid-caller-role-or-address"
-        );
-        _;
     }
 
     /// @dev can be pausable by GAC or local flag

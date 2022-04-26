@@ -182,7 +182,8 @@ contract StakedCitadelLocker is
         address _rewardsToken,
         address _distributor,
         bool _useBoost
-    ) public onlyRole(CONTRACT_GOVERNANCE_ROLE) gacPausable {
+    ) public gacPausable {
+        _onlyRole(CONTRACT_GOVERNANCE_ROLE);
         require(rewardData[_rewardsToken].lastUpdateTime == 0);
         // require(_rewardsToken != address(stakingToken));
         rewardTokens.push(_rewardsToken);
@@ -197,7 +198,8 @@ contract StakedCitadelLocker is
         address _rewardsToken,
         address _distributor,
         bool _approved
-    ) external onlyRole(CONTRACT_GOVERNANCE_ROLE) gacPausable {
+    ) external gacPausable {
+        _onlyRole(CONTRACT_GOVERNANCE_ROLE);
         require(rewardData[_rewardsToken].lastUpdateTime > 0);
         rewardDistributors[_rewardsToken][_distributor] = _approved;
     }
@@ -205,9 +207,9 @@ contract StakedCitadelLocker is
     //Set the staking contract for the underlying cvx
     function setStakingContract(address _staking)
         external
-        onlyRole(CONTRACT_GOVERNANCE_ROLE)
         gacPausable
-    {
+    {   
+        _onlyRole(CONTRACT_GOVERNANCE_ROLE);
         require(stakingProxy == address(0), "!assign");
 
         stakingProxy = _staking;
@@ -216,9 +218,9 @@ contract StakedCitadelLocker is
     //set staking limits. will stake the mean of the two once either ratio is crossed
     function setStakeLimits(uint256 _minimum, uint256 _maximum)
         external
-        onlyRole(CONTRACT_GOVERNANCE_ROLE)
         gacPausable
     {
+        _onlyRole(CONTRACT_GOVERNANCE_ROLE);
         require(_minimum <= denominator, "min range");
         require(_maximum <= denominator, "max range");
         require(_minimum <= _maximum, "min range");
@@ -232,7 +234,8 @@ contract StakedCitadelLocker is
         uint256 _max,
         uint256 _rate,
         address _receivingAddress
-    ) external onlyRole(CONTRACT_GOVERNANCE_ROLE) gacPausable {
+    ) external gacPausable {
+        _onlyRole(CONTRACT_GOVERNANCE_ROLE);
         require(_max < 1500, "over max payment"); //max 15%
         require(_rate < 30000, "over max rate"); //max 3x
         require(_receivingAddress != address(0), "invalid address"); //must point somewhere valid
@@ -244,9 +247,9 @@ contract StakedCitadelLocker is
     //set kick incentive
     function setKickIncentive(uint256 _rate, uint256 _delay)
         external
-        onlyRole(CONTRACT_GOVERNANCE_ROLE)
         gacPausable
     {
+        _onlyRole(CONTRACT_GOVERNANCE_ROLE);
         require(_rate <= 500, "over max rate"); //max 5% per epoch
         require(_delay >= 2, "min delay"); //minimum 2 epochs of grace
         kickRewardPerEpoch = _rate;
@@ -254,7 +257,8 @@ contract StakedCitadelLocker is
     }
 
     //shutdown the contract. unstake all tokens. release all locks
-    function shutdown() external onlyRole(CONTRACT_GOVERNANCE_ROLE) {
+    function shutdown() external {
+        _onlyRole(CONTRACT_GOVERNANCE_ROLE);
         isShutdown = true;
     }
 
@@ -1090,10 +1094,9 @@ contract StakedCitadelLocker is
     // Added to support recovering LP Rewards from other systems such as BAL to be distributed to holders
     function recoverERC20(address _tokenAddress, uint256 _tokenAmount)
         external
-        onlyRole(CONTRACT_GOVERNANCE_ROLE)
         gacPausable
     {   
-
+        _onlyRole(CONTRACT_GOVERNANCE_ROLE);
         // Will revert if no treasury governance role allocated
         address treasury = gac.getRoleMember(TREASURY_GOVERNANCE_ROLE, 0);
 
