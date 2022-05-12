@@ -147,4 +147,21 @@ contract GlobalAccessControlTest is BaseFixture {
         vm.prank(techOps);
         gac.unpause();
     }
+
+    function testCallerRoles() public{
+        vm.expectRevert("GAC: invalid-caller-role");
+        xCitadelLocker.setStakingContract(address(1));
+
+        vm.prank(governance); // only governance can set staking contract
+        xCitadelLocker.setStakingContract(address(1));
+
+        vm.expectRevert("GAC: invalid-caller-role");
+        xCitadelLocker.setStakeLimits(0, 4000);
+
+        vm.expectRevert("GAC: invalid-caller-role");
+        xCitadelLocker.setKickIncentive(200, 3); // only governance can set kick incentive
+
+        vm.prank(governance);
+        xCitadelLocker.setKickIncentive(200, 3); // governance can set kick incentive
+    }
 }
