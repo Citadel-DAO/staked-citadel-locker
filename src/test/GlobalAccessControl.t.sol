@@ -163,5 +163,12 @@ contract GlobalAccessControlTest is BaseFixture {
 
         vm.prank(governance);
         xCitadelLocker.setKickIncentive(200, 3); // governance can set kick incentive
+
+        vm.expectRevert("GAC: invalid-caller-role"); // only governance can set Boost
+        xCitadelLocker.setBoost(1000, 10000, address(2));
+
+        vm.prank(governance);
+        xCitadelLocker.setBoost(1000, 10000, address(2));
+
     }
 }

@@ -34,7 +34,34 @@ contract LockerTest is BaseFixture {
         xCitadelLocker.setKickIncentive(400, 1); //minimum 2 epochs of grace
         assertEq(xCitadelLocker.kickRewardPerEpoch(), 200); 
         assertEq(xCitadelLocker.kickRewardEpochDelay(), 3);
-        
+
+        xCitadelLocker.setBoost(1000, 10000, address(2));
+        // check if set
+        assertEq(xCitadelLocker.nextMaximumBoostPayment(), 1000);
+        assertEq(xCitadelLocker.nextBoostRate(), 10000);
+        assertEq(xCitadelLocker.boostPayment(), address(2));
+
+        vm.expectRevert("over max payment");
+        xCitadelLocker.setBoost(2000, 50000, address(3)); //max 15%
+        // check if nothing is changed
+        assertEq(xCitadelLocker.nextMaximumBoostPayment(), 1000);
+        assertEq(xCitadelLocker.nextBoostRate(), 10000);
+        assertEq(xCitadelLocker.boostPayment(), address(2));
+
+        vm.expectRevert("over max rate");
+        xCitadelLocker.setBoost(1200, 50000, address(3)); //max 3x
+        // check if nothing is changed
+        assertEq(xCitadelLocker.nextMaximumBoostPayment(), 1000);
+        assertEq(xCitadelLocker.nextBoostRate(), 10000);
+        assertEq(xCitadelLocker.boostPayment(), address(2));
+
+        vm.expectRevert("invalid address");
+        xCitadelLocker.setBoost(1200, 20000, address(0)); //max 3x
+        // check if nothing is changed
+        assertEq(xCitadelLocker.nextMaximumBoostPayment(), 1000);
+        assertEq(xCitadelLocker.nextBoostRate(), 10000);
+        assertEq(xCitadelLocker.boostPayment(), address(2));
+
         vm.stopPrank();
 
     }
