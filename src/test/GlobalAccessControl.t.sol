@@ -193,7 +193,7 @@ contract GlobalAccessControlTest is BaseFixture {
 
         // only governance can recoverERC20
         vm.expectRevert("GAC: invalid-caller-role");
-        xCitadelLocker.recoverERC20(address(4), 0); 
+        xCitadelLocker.recoverERC20(address(wbtc), 0); 
 
         vm.prank(governance);
         xCitadelLocker.recoverERC20(address(wbtc), 0); 
