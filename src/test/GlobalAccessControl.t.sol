@@ -147,4 +147,60 @@ contract GlobalAccessControlTest is BaseFixture {
         vm.prank(techOps);
         gac.unpause();
     }
+
+    function testCallerRoles() public{
+        // only governance can add reward
+        vm.expectRevert("GAC: invalid-caller-role");
+        xCitadelLocker.addReward(address(1), address(2), false);
+
+        vm.prank(governance);
+        xCitadelLocker.addReward(address(1), address(2), false);
+        
+        // only governance can approve reward distributor
+        vm.expectRevert("GAC: invalid-caller-role");
+        xCitadelLocker.approveRewardDistributor(address(1), address(3), true);
+
+        vm.prank(governance);
+        xCitadelLocker.approveRewardDistributor(address(1), address(3), true);
+
+        // only governance can set staking contract
+        vm.expectRevert("GAC: invalid-caller-role");
+        xCitadelLocker.setStakingContract(address(1));
+
+        vm.prank(governance); 
+        xCitadelLocker.setStakingContract(address(1));
+
+        // only governance can set kick incentive
+        vm.expectRevert("GAC: invalid-caller-role");
+        xCitadelLocker.setKickIncentive(200, 3); 
+
+        vm.prank(governance);
+        xCitadelLocker.setKickIncentive(200, 3); 
+
+        // only governance can set Boost
+        vm.expectRevert("GAC: invalid-caller-role"); 
+        xCitadelLocker.setBoost(1000, 10000, address(2));
+
+        vm.prank(governance);
+        xCitadelLocker.setBoost(1000, 10000, address(2));
+
+        // only governance can shutdown
+        vm.expectRevert("GAC: invalid-caller-role");
+        xCitadelLocker.shutdown();
+
+        vm.prank(governance);
+        xCitadelLocker.shutdown();
+
+        // only governance can recoverERC20
+        vm.expectRevert("GAC: invalid-caller-role");
+        xCitadelLocker.recoverERC20(address(wbtc), 0); 
+
+        vm.prank(governance);
+        xCitadelLocker.recoverERC20(address(wbtc), 0); 
+
+        // only governance can set stake limits
+        vm.expectRevert("GAC: invalid-caller-role");
+        xCitadelLocker.setStakeLimits(0, 4000);
+
+    }
 }

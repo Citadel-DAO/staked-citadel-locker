@@ -7,6 +7,7 @@ import "ds-test/test.sol";
 import {Utils} from "./utils/Utils.sol";
 import {StakedCitadelLocker} from "../StakedCitadelLocker.sol";
 import {GlobalAccessControl} from "../mocks/GlobalAccessControl.sol";
+import "../interfaces/IERC20.sol";
 
 contract BaseFixture is DSTest, Utils {
     CheatCodes constant vm = CheatCodes(HEVM_ADDRESS);
@@ -35,6 +36,8 @@ contract BaseFixture is DSTest, Utils {
 
     uint256 public constant ONE = 1 ether;
 
+    address constant wbtc_address = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
+
     // ==================
     // ===== Actors =====
     // ==================
@@ -59,7 +62,8 @@ contract BaseFixture is DSTest, Utils {
 
     GlobalAccessControl gac = new GlobalAccessControl();
     StakedCitadelLocker xCitadelLocker = new StakedCitadelLocker();
-
+    IERC20 wbtc = IERC20(wbtc_address);
+    
     function getSelector(string memory _func) public pure returns (bytes4) {
         return bytes4(keccak256(bytes(_func)));
     }
